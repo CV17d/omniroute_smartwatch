@@ -7,6 +7,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -148,20 +149,34 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Offline Toast Banner
+                        // Standalone Offline / Queue Alert Banner
                         if (uiState.isOfflineAlertVisible) {
+                            val alertText = if (!uiState.isOnline) {
+                                if (uiState.pendingSyncCount > 0) {
+                                    "⚡ OFFLINE: ${uiState.pendingSyncCount} en cola Room"
+                                } else {
+                                    "⚡ OFFLINE: Sin Wi-Fi / LTE"
+                                }
+                            } else {
+                                "🔄 Sincronizando ${uiState.pendingSyncCount} pendientes..."
+                            }
+
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .align(Alignment.BottomCenter)
-                                    .padding(bottom = 12.dp, start = 20.dp, end = 20.dp)
+                                    .padding(bottom = 12.dp, start = 18.dp, end = 18.dp)
                                     .clip(RoundedCornerShape(12.dp))
                                     .background(AlertRedLight)
+                                    .clickable {
+                                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                        viewModel.retrySync()
+                                    }
                                     .padding(vertical = 4.dp, horizontal = 8.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "⚡ OFFLINE: Cola local activa",
+                                    text = alertText,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = AlertRed

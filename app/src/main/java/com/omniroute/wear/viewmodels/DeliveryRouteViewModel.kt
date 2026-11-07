@@ -3,9 +3,8 @@ package com.omniroute.wear.viewmodels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.omniroute.wear.data.service.WearableDataLayerService
+import com.omniroute.wear.data.repository.DeliveryRepository
 import com.omniroute.wear.domain.model.DeliveryStatus
-import com.omniroute.wear.domain.model.DeliveryStatusUpdateEvent
 import com.omniroute.wear.domain.model.RouteSummary
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,22 +14,58 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel managing state transitions, navigation flow, and Bluetooth dispatching
- * for OmniRoute on Wear OS.
+ * ViewModel for Standalone Wear OS client.
+ * Interacts directly with DeliveryRepository (REST API via Retrofit + Room Database).
  */
 class DeliveryRouteViewModel(
     application: Application,
-    private val dataLayerService: WearableDataLayerService = WearableDataLayerService(application)
+    private val repository: DeliveryRepository = DeliveryRepository(application)
 ) : AndroidViewModel(application) {
 
     private val _uiState = MutableStateFlow(DeliveryUiState())
     val uiState: StateFlow<DeliveryUiState> = _uiState.asStateFlow()
 
     init {
+        // Observe direct internet connectivity (Wi-Fi / LTE)
         viewModelScope.launch {
-            dataLayerService.isPhoneConnected.collect { connected ->
-                _uiState.update { it.copy(isPhoneConnected = connected, isOfflineAlertVisible = !connected) }
+            repository.isOnline.collect { online ->
+                _uiState.update {
+                    it.copy(
+                        isOnline = online,
+                        isOfflineAlertVisible = !online || it.pendingSyncCount > 0
+                    )
+                }
             }
+        }
+
+        // Observe pending mutations queued in Room database
+        viewModelScope.launch {
+            repository.pendingSyncCount.collect { count ->
+                _uiState.update {
+                    it.copy(
+                        pendingSyncCount = count,
+                        isOfflineAlertVisible = !it.isOnline || count > 0
+                    )
+                }
+            }
+        }
+
+        // Observe reactive route changes from Room
+        viewModelScope.launch {
+            repository.routeFlow.collect { cachedRoute ->
+                if (cachedRoute != null) {
+                    _uiState.update {
+                        it.copy(route = cachedRoute)
+                    }
+                }
+            }
+        }
+
+        // Initial fetch from backend over HTTP
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            repository.fetchActiveRoute()
+            _uiState.update { it.copy(isLoading = false) }
         }
     }
 
@@ -46,7 +81,9 @@ class DeliveryRouteViewModel(
      */
     fun arriveAtStop() {
         val stop = _uiState.value.currentStop ?: return
-        updateStopStatus(stop.id, DeliveryStatus.ARRIVED)
+        viewModelScope.launch {
+            repository.updateDeliveryStatus(stop.id, DeliveryStatus.ARRIVED)
+        }
         _uiState.update {
             it.copy(
                 currentScreen = ScreenDestination.DELIVERY_CONFIRMATION,
@@ -60,17 +97,13 @@ class DeliveryRouteViewModel(
      */
     fun confirmDelivery() {
         val stop = _uiState.value.currentStop ?: return
-        updateStopStatus(stop.id, DeliveryStatus.DELIVERED)
-
         _uiState.update { it.copy(confirmationFeedback = "¡ENTREGADO!") }
 
         viewModelScope.launch {
-            dataLayerService.sendStatusUpdate(
-                DeliveryStatusUpdateEvent(
-                    stopId = stop.id,
-                    newStatus = DeliveryStatus.DELIVERED,
-                    notes = "Entregado por mensajero"
-                )
+            repository.updateDeliveryStatus(
+                stopId = stop.id,
+                newStatus = DeliveryStatus.DELIVERED,
+                notes = "Entregado por mensajero"
             )
 
             // Auto-advance after 1.3s glanceable feedback
@@ -85,17 +118,13 @@ class DeliveryRouteViewModel(
      */
     fun markAsAbsent(reason: String = "Destinatario ausente") {
         val stop = _uiState.value.currentStop ?: return
-        updateStopStatus(stop.id, DeliveryStatus.ABSENT)
-
         _uiState.update { it.copy(confirmationFeedback = "REGISTRADO: AUSENTE") }
 
         viewModelScope.launch {
-            dataLayerService.sendStatusUpdate(
-                DeliveryStatusUpdateEvent(
-                    stopId = stop.id,
-                    newStatus = DeliveryStatus.ABSENT,
-                    notes = reason
-                )
+            repository.updateDeliveryStatus(
+                stopId = stop.id,
+                newStatus = DeliveryStatus.ABSENT,
+                notes = reason
             )
 
             delay(1300)
@@ -109,15 +138,11 @@ class DeliveryRouteViewModel(
      */
     fun reportIncident(tag: String) {
         val stop = _uiState.value.currentStop ?: return
-        updateStopStatus(stop.id, DeliveryStatus.INCIDENT)
-
         viewModelScope.launch {
-            dataLayerService.sendStatusUpdate(
-                DeliveryStatusUpdateEvent(
-                    stopId = stop.id,
-                    newStatus = DeliveryStatus.INCIDENT,
-                    notes = tag
-                )
+            repository.updateDeliveryStatus(
+                stopId = stop.id,
+                newStatus = DeliveryStatus.INCIDENT,
+                notes = tag
             )
             _uiState.update { it.copy(isIncidentModalVisible = false) }
             advanceToNextStop()
@@ -126,6 +151,13 @@ class DeliveryRouteViewModel(
 
     fun toggleIncidentModal(show: Boolean) {
         _uiState.update { it.copy(isIncidentModalVisible = show) }
+    }
+
+    /**
+     * Triggers manual synchronization retry.
+     */
+    fun retrySync() {
+        repository.triggerManualSync()
     }
 
     /**
@@ -150,28 +182,19 @@ class DeliveryRouteViewModel(
         }
     }
 
-    private fun updateStopStatus(stopId: String, status: DeliveryStatus) {
-        _uiState.update { state ->
-            val updatedStops = state.route.stops.map { stop ->
-                if (stop.id == stopId) stop.copy(status = status) else stop
-            }
-            val completedCount = updatedStops.count { it.status.isFinalState }
-            val updatedRoute = state.route.copy(
-                stops = updatedStops,
-                completedStops = completedCount
-            )
-            state.copy(route = updatedRoute)
-        }
-    }
-
     /**
      * Resets demo route state to original sample.
      */
     fun resetDemoRoute() {
-        _uiState.value = DeliveryUiState(
-            currentScreen = ScreenDestination.ROUTE_START,
-            route = RouteSummary.SAMPLE_MOTO_ROUTE,
-            currentStopIndex = 3
-        )
+        viewModelScope.launch {
+            repository.fetchActiveRoute()
+        }
+        _uiState.update {
+            it.copy(
+                currentScreen = ScreenDestination.ROUTE_START,
+                route = RouteSummary.SAMPLE_MOTO_ROUTE,
+                currentStopIndex = 3
+            )
+        }
     }
 }
