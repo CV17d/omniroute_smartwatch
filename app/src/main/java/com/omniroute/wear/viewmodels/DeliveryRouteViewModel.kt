@@ -2,6 +2,8 @@ package com.omniroute.wear.viewmodels
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.omniroute.wear.data.repository.DeliveryRepository
 import com.omniroute.wear.domain.model.DeliveryStatus
@@ -17,7 +19,7 @@ import kotlinx.coroutines.launch
  * ViewModel for Standalone Wear OS client.
  * Interacts directly with DeliveryRepository (REST API via Retrofit + Room Database).
  */
-class DeliveryRouteViewModel(
+class DeliveryRouteViewModel @JvmOverloads constructor(
     application: Application,
     private val repository: DeliveryRepository = DeliveryRepository(application)
 ) : AndroidViewModel(application) {
@@ -55,17 +57,37 @@ class DeliveryRouteViewModel(
             repository.routeFlow.collect { cachedRoute ->
                 if (cachedRoute != null) {
                     _uiState.update {
-                        it.copy(route = cachedRoute)
+                        it.copy(
+                            route = cachedRoute,
+                            currentStopIndex = cachedRoute.activeStopIndex
+                        )
                     }
                 }
             }
         }
 
-        // Initial fetch from backend over HTTP
+        // Initial fetch from Spring Boot backend over HTTP
+        fetchActiveRoute()
+    }
+
+    /**
+     * Triggers active route fetch from Spring Boot backend (GET /api/wearable/routes/active).
+     */
+    fun fetchActiveRoute() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            repository.fetchActiveRoute()
-            _uiState.update { it.copy(isLoading = false) }
+            val result = repository.fetchActiveRoute()
+            result.onSuccess { route ->
+                _uiState.update {
+                    it.copy(
+                        route = route,
+                        currentStopIndex = route.activeStopIndex,
+                        isLoading = false
+                    )
+                }
+            }.onFailure {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 
@@ -193,8 +215,44 @@ class DeliveryRouteViewModel(
             it.copy(
                 currentScreen = ScreenDestination.ROUTE_START,
                 route = RouteSummary.SAMPLE_MOTO_ROUTE,
-                currentStopIndex = 3
+                currentStopIndex = 3,
             )
+        }
+    }
+
+    /**
+     * Starts STOMP WebSocket connection and subscribes to /topic/route-updates.
+     */
+    fun startRealtimeSync() {
+        viewModelScope.launch {
+            repository.startRealtimeSync()
+        }
+    }
+
+    /**
+     * Stops STOMP WebSocket connection to save smartwatch battery when the app is paused/stopped.
+     */
+    fun stopRealtimeSync() {
+        viewModelScope.launch {
+            repository.stopRealtimeSync()
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopRealtimeSync()
+    }
+
+    class Factory(
+        private val application: Application,
+        private val repository: DeliveryRepository
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(DeliveryRouteViewModel::class.java)) {
+                return DeliveryRouteViewModel(application, repository) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }
     }
 }

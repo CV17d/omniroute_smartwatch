@@ -5,19 +5,25 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.util.Log
+import com.google.gson.Gson
 import com.omniroute.wear.data.local.dao.DeliveryDao
 import com.omniroute.wear.data.local.database.RouteDatabase
 import com.omniroute.wear.data.local.entity.DeliveryStopEntity
 import com.omniroute.wear.data.local.entity.PendingDeliverySyncEntity
 import com.omniroute.wear.data.local.entity.RouteSummaryEntity
 import com.omniroute.wear.data.remote.ApiClient
-import com.omniroute.wear.data.remote.RouteApiService
+import com.omniroute.wear.data.remote.DeliveryApiService
 import com.omniroute.wear.data.remote.dto.DeliveryStatusRequestDto
+import com.omniroute.wear.data.remote.dto.DeliveryStatusStompDto
+import com.omniroute.wear.data.remote.dto.RouteSummaryDto
+import com.omniroute.wear.data.remote.stomp.StompClientManager
 import com.omniroute.wear.data.worker.SyncPendingDeliveriesWorker
 import com.omniroute.wear.domain.model.DeliveryStatus
 import com.omniroute.wear.domain.model.RouteSummary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,19 +34,31 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Clean Architecture repository coordinating direct REST HTTP calls (Retrofit)
- * and local offline storage / queueing (Room Database).
+ * Clean Architecture repository coordinating direct REST HTTP calls (Retrofit),
+ * real-time bidirectional STOMP WebSockets, and local offline storage / queueing (Room Database).
  */
 class DeliveryRepository(
     private val context: Context,
     private val dao: DeliveryDao = RouteDatabase.getInstance(context).deliveryDao(),
-    private val apiService: RouteApiService = ApiClient.routeApiService
+    private val apiService: DeliveryApiService = ApiClient.deliveryApiService,
+    private val stompClientManager: StompClientManager = ApiClient.stompClientManager,
 ) {
+    companion object {
+        private const val TAG = "DeliveryRepository"
+        const val TOPIC_ROUTE_UPDATES = "/topic/route-updates"
+        const val DESTINATION_DELIVERY_STATUS = "/app/delivery.status"
+    }
+
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private val gson = Gson()
+
+    private var stompSubscriptionJob: Job? = null
 
     private val _isOnline = MutableStateFlow(checkInitialInternet())
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
+
+    val isStompConnected: StateFlow<Boolean> = stompClientManager.isConnected
 
     val pendingSyncCount: Flow<Int> = dao.getPendingSyncCountFlow()
 
@@ -137,11 +155,24 @@ class DeliveryRepository(
             dao.updateCompletedStops(currentRoute.id, completedCount)
         }
 
-        // 2. Direct HTTP POST if online
-        val requestDto = DeliveryStatusRequestDto(
+        // 2. Instant real-time STOMP broadcast to Spring Boot -> React web dashboard
+        val stompPayload = DeliveryStatusStompDto(
+            stopId = stopId,
             status = newStatus.name,
             timestamp = System.currentTimeMillis(),
-            notes = notes
+            notes = notes,
+        )
+        if (_isOnline.value) {
+            repositoryScope.launch {
+                stompClientManager.send(DESTINATION_DELIVERY_STATUS, stompPayload)
+            }
+        }
+
+        // 3. Direct HTTP POST if online (redundant backup for REST persistence)
+        val requestDto = DeliveryStatusRequestDto(
+            status = newStatus.name,
+            timestamp = stompPayload.timestamp,
+            notes = notes,
         )
 
         var directPostSuccessful = false
@@ -156,21 +187,75 @@ class DeliveryRepository(
             }
         }
 
-        // 3. If direct POST failed or offline, enqueue in Room for WorkManager
+        // 4. If direct POST failed or offline, enqueue in Room for WorkManager
         if (!directPostSuccessful) {
             dao.insertPendingSync(
                 PendingDeliverySyncEntity(
                     stopId = stopId,
                     status = newStatus.name,
                     timestamp = requestDto.timestamp,
-                    notes = notes
-                )
+                    notes = notes,
+                ),
             )
             // Schedule WorkManager deferred sync
             SyncPendingDeliveriesWorker.enqueue(context)
         }
 
         directPostSuccessful
+    }
+
+    /**
+     * Connects to the STOMP WebSocket broker and subscribes to real-time route updates.
+     * Safely invoked when the watch enters the foreground (onStart/onResume).
+     */
+    suspend fun startRealtimeSync() {
+        if (!_isOnline.value) {
+            Log.d(TAG, "Cannot start STOMP sync: offline")
+            return
+        }
+
+        val connected = stompClientManager.connect()
+        if (connected) {
+            stompSubscriptionJob?.cancel()
+            stompSubscriptionJob = repositoryScope.launch {
+                Log.i(TAG, "Listening for route modifications on $TOPIC_ROUTE_UPDATES")
+                stompClientManager.subscribe(TOPIC_ROUTE_UPDATES).collect { json ->
+                    handleIncomingRouteUpdate(json)
+                }
+            }
+        }
+    }
+
+    /**
+     * Disconnects the STOMP WebSocket session to conserve smartwatch battery life.
+     * Invoked when the app moves to background (onStop/onPause).
+     */
+    suspend fun stopRealtimeSync() {
+        Log.d(TAG, "Stopping STOMP real-time sync to conserve battery")
+        stompSubscriptionJob?.cancel()
+        stompSubscriptionJob = null
+        stompClientManager.disconnect()
+    }
+
+    /**
+     * Parses real-time route JSON payload pushed from Spring Boot and updates Room DB.
+     * Room's Flow automatically triggers UI recomposition via StateFlow.
+     */
+    private suspend fun handleIncomingRouteUpdate(json: String) {
+        try {
+            Log.d(TAG, "Received STOMP route update: $json")
+            val routeDto = gson.fromJson(json, RouteSummaryDto::class.java)
+            if (routeDto != null) {
+                val domainRoute = routeDto.toDomainModel()
+                dao.replaceRoute(
+                    summary = RouteSummaryEntity.fromDomain(domainRoute),
+                    stops = domainRoute.stops.map { DeliveryStopEntity.fromDomain(it, domainRoute.id) },
+                )
+                Log.i(TAG, "Updated local Room cache from real-time STOMP broadcast: ${domainRoute.routeName}")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing incoming STOMP route JSON: ${e.message}")
+        }
     }
 
     /**
@@ -194,16 +279,25 @@ class DeliveryRepository(
             .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
 
-        connectivityManager.registerNetworkCallback(request, object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                _isOnline.value = true
-                // Network restored: trigger background sync of queued mutations
-                SyncPendingDeliveriesWorker.enqueue(context)
-            }
+        connectivityManager.registerNetworkCallback(
+            request,
+            object : ConnectivityManager.NetworkCallback() {
+                override fun onAvailable(network: Network) {
+                    _isOnline.value = true
+                    // Network restored: trigger background sync of queued mutations and reconnect STOMP
+                    SyncPendingDeliveriesWorker.enqueue(context)
+                    repositoryScope.launch {
+                        startRealtimeSync()
+                    }
+                }
 
-            override fun onLost(network: Network) {
-                _isOnline.value = false
-            }
-        })
+                override fun onLost(network: Network) {
+                    _isOnline.value = false
+                    repositoryScope.launch {
+                        stopRealtimeSync()
+                    }
+                }
+            },
+        )
     }
 }

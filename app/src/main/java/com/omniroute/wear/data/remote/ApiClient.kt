@@ -7,15 +7,12 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 /**
- * Singleton Retrofit & OkHttp provider for direct REST communication.
+ * Singleton Retrofit & OkHttp provider for direct REST communication with Spring Boot.
  */
 object ApiClient {
 
-    // Default development base URL (10.0.2.2 points to host localhost in Android Emulator)
-    private const val DEFAULT_BASE_URL = "http://10.0.2.2:8080/"
-
-    @Volatile
-    private var customBaseUrl: String = DEFAULT_BASE_URL
+    // URL Pública Segura (HTTPS) vía Cloudflare Tunnel: Funciona en Emulador, Reloj Físico por Wi-Fi y Reloj en la calle por Bluetooth/4G
+    private const val BASE_URL = "https://science-marble-strap-strengths.trycloudflare.com/"
 
     private val loggingInterceptor by lazy {
         HttpLoggingInterceptor().apply {
@@ -25,29 +22,41 @@ object ApiClient {
 
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .addInterceptor(loggingInterceptor)
             .build()
     }
 
-    private val retrofitBuilder by lazy {
+    private val retrofit by lazy {
         Retrofit.Builder()
+            .baseUrl(BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
-    }
-
-    val routeApiService: RouteApiService by lazy {
-        retrofitBuilder
-            .baseUrl(customBaseUrl)
             .build()
-            .create(RouteApiService::class.java)
     }
 
-    fun setBaseUrl(newUrl: String) {
-        val sanitizedUrl = if (newUrl.endsWith("/")) newUrl else "$newUrl/"
-        customBaseUrl = sanitizedUrl
+    val deliveryApiService: DeliveryApiService by lazy {
+        retrofit.create(DeliveryApiService::class.java)
+    }
+
+    // Alias for backwards compatibility across the project
+    val routeApiService: DeliveryApiService get() = deliveryApiService
+
+    /**
+     * STOMP WebSocket URL derived automatically from BASE_URL (ws:// or wss://).
+     * E.g. "ws://10.0.2.2:8080/ws" or "wss://science-marble-strap-strengths.trycloudflare.com/ws"
+     */
+    val wsUrl: String
+        get() = if (BASE_URL.startsWith("https://")) {
+            BASE_URL.replace("https://", "wss://").trimEnd('/') + "/ws"
+        } else {
+            BASE_URL.replace("http://", "ws://").trimEnd('/') + "/ws"
+        }
+
+    val stompClientManager: com.omniroute.wear.data.remote.stomp.StompClientManager by lazy {
+        com.omniroute.wear.data.remote.stomp.StompClientManager(wsUrl)
     }
 }

@@ -2,7 +2,6 @@ package com.omniroute.wear.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -36,7 +35,7 @@ fun ActiveDeliveryScreen(
     vehicleType: String,
     onArrived: () -> Unit,
     onIncident: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val listState = rememberScalingLazyListState()
 
@@ -46,16 +45,16 @@ fun ActiveDeliveryScreen(
             .background(BackgroundPrimary),
         state = listState,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         // 1. Navigation Header
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .padding(horizontal = 14.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -63,13 +62,13 @@ fun ActiveDeliveryScreen(
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Black,
                         color = TextPrimary,
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp),
                     )
                     Text(
                         text = distanceInstruction,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = TextPrimary
+                        color = TextPrimary,
                     )
                 }
                 StatusBadge(text = vehicleType)
@@ -82,7 +81,7 @@ fun ActiveDeliveryScreen(
                 address = address,
                 recipient = recipient,
                 modifier = Modifier.padding(vertical = 4.dp),
-                isEmphasized = true
+                isEmphasized = true,
             )
         }
 
@@ -91,7 +90,7 @@ fun ActiveDeliveryScreen(
             DeliveryActionButton(
                 style = ActionButtonStyle.PrimaryGreen(label = "¡LLEGUE!"),
                 onClick = onArrived,
-                modifier = Modifier.padding(top = 2.dp)
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
 
@@ -100,7 +99,7 @@ fun ActiveDeliveryScreen(
             DeliveryActionButton(
                 style = ActionButtonStyle.IncidentLight(label = "INCIDENCIA"),
                 onClick = onIncident,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp),
             )
         }
     }

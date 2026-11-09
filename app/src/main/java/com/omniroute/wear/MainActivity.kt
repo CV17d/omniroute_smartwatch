@@ -27,6 +27,8 @@ import androidx.wear.compose.material.Scaffold
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
 import androidx.wear.compose.material.TimeTextDefaults
+import com.omniroute.wear.data.local.database.RouteDatabase
+import com.omniroute.wear.data.repository.DeliveryRepository
 import com.omniroute.wear.domain.model.DeliveryStatus
 import com.omniroute.wear.ui.screens.ActiveDeliveryScreen
 import com.omniroute.wear.ui.screens.DeliveryConfirmationScreen
@@ -43,7 +45,15 @@ import com.omniroute.wear.viewmodels.ScreenDestination
 
 class MainActivity : ComponentActivity() {
 
-    private val viewModel: DeliveryRouteViewModel by viewModels()
+    private val viewModel: DeliveryRouteViewModel by viewModels {
+        DeliveryRouteViewModel.Factory(
+            application = application,
+            repository = DeliveryRepository(
+                context = applicationContext,
+                dao = RouteDatabase.getDatabase(applicationContext).deliveryDao(),
+            ),
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -149,8 +159,8 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // Standalone Offline / Queue Alert Banner
-                        if (uiState.isOfflineAlertVisible) {
+                        // Standalone Offline / Queue Alert Banner (Shown only for screens where it is not integrated inline)
+                        if (uiState.isOfflineAlertVisible && uiState.currentScreen != ScreenDestination.ACTIVE_DELIVERY) {
                             val alertText = if (!uiState.isOnline) {
                                 if (uiState.pendingSyncCount > 0) {
                                     "⚡ OFFLINE: ${uiState.pendingSyncCount} en cola Room"
@@ -179,7 +189,7 @@ class MainActivity : ComponentActivity() {
                                     text = alertText,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = AlertRed
+                                    color = AlertRed,
                                 )
                             }
                         }
@@ -187,5 +197,15 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        viewModel.startRealtimeSync()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        viewModel.stopRealtimeSync()
     }
 }

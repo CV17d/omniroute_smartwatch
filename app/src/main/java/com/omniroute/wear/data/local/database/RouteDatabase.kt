@@ -40,5 +40,7 @@ abstract class RouteDatabase : RoomDatabase() {
                     .also { instance = it }
             }
         }
+
+        fun getDatabase(context: Context): RouteDatabase = getInstance(context)
     }
 }

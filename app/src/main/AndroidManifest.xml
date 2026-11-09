@@ -14,7 +14,8 @@
         android:icon="@android:drawable/ic_dialog_map"
         android:label="OmniRoute"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@android:style/Theme.DeviceDefault"
+        android:usesCleartextTraffic="true">
 
         <!-- Standalone Wear OS App: Direct cloud backend connection without companion phone app -->
         <meta-data

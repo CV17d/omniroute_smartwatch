@@ -1,6 +1,5 @@
 package com.omniroute.wear.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -43,7 +42,7 @@ sealed class ActionButtonStyle {
 @Composable
 fun DeliveryActionButton(
     style: ActionButtonStyle,
-    onClick: () -> VoidHandler,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
@@ -97,7 +96,8 @@ fun DeliveryActionButton(
                     .padding(horizontal = 14.dp),
                 shape = shape,
                 border = ButtonDefaults.outlinedButtonBorder(
-                    borderStroke = BorderStroke(1.dp, BorderSubtle)
+                    borderColor = BorderSubtle,
+                    borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = SurfaceCard,
@@ -135,7 +135,8 @@ fun DeliveryActionButton(
                     .padding(horizontal = 14.dp),
                 shape = shape,
                 border = ButtonDefaults.outlinedButtonBorder(
-                    borderStroke = BorderStroke(1.dp, BorderSubtle)
+                    borderColor = BorderSubtle,
+                    borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = SurfaceCard,
@@ -182,7 +183,8 @@ fun DeliveryActionButton(
                     .padding(horizontal = 20.dp),
                 shape = shape,
                 border = ButtonDefaults.outlinedButtonBorder(
-                    borderStroke = BorderStroke(1.dp, BorderSubtle)
+                    borderColor = BorderSubtle,
+                    borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = SurfaceCard,
@@ -218,7 +220,8 @@ fun DeliveryActionButton(
                     .padding(horizontal = 20.dp),
                 shape = shape,
                 border = ButtonDefaults.outlinedButtonBorder(
-                    borderStroke = BorderStroke(1.dp, style.tint)
+                    borderColor = style.tint,
+                    borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = Color.Transparent,
@@ -236,5 +239,3 @@ fun DeliveryActionButton(
         }
     }
 }
-
-typealias VoidHandler = () -> Unit

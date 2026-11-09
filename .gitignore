@@ -33,3 +33,14 @@ fastlane/test_output
 # Visual Studio Code / JetBrains
 .vscode/
 .idea/
+
+# Android & Gradle
+.gradle/
+build/
+app/build/
+local.properties
+*.apk
+*.aab
+captures/
+.cxx/
+
