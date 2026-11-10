@@ -23,21 +23,37 @@ import androidx.wear.compose.material.Text
 import com.omniroute.wear.ui.theme.AlertRed
 import com.omniroute.wear.ui.theme.BorderSubtle
 import com.omniroute.wear.ui.theme.DeliveryGreen
-import com.omniroute.wear.ui.theme.SurfaceCard
+import com.omniroute.wear.ui.theme.SurfaceButtonSecondary
 import com.omniroute.wear.ui.theme.TextPrimary
 import com.omniroute.wear.ui.theme.TextSecondary
+import com.omniroute.wear.ui.theme.WarningAmber
 
 sealed class ActionButtonStyle {
+    // Primary Vibrant Green Success Actions ("INICIAR RUTA", "¡LLEGUE!")
     data class PrimaryGreen(val label: String, val icon: ImageVector? = null) : ActionButtonStyle()
+
+    // Primary Vibrant Green Delivery Confirmation ("✓ ENTREGADO")
+    data class DeliveredSuccess(val label: String = "ENTREGADO") : ActionButtonStyle()
+    // Backward-compatible alias
     data class DeliveredLight(val label: String = "ENTREGADO") : ActionButtonStyle()
+
+    // Secondary Dark Pill Actions to prevent accidental taps ("✕ NO ENTREGADO / AUSENTE")
+    data class AbsentSecondary(val title: String = "NO ENTREGADO", val subtitle: String = "AUSENTE") : ActionButtonStyle()
+    // Backward-compatible alias
     data class AbsentLight(val title: String = "NO ENTREGADO", val subtitle: String = "AUSENTE") : ActionButtonStyle()
+
+    // Secondary Dark Pill Incident Action ("INCIDENCIA ⚠️")
+    data class IncidentSecondary(val label: String = "INCIDENCIA") : ActionButtonStyle()
+    // Backward-compatible alias
     data class IncidentLight(val label: String = "INCIDENCIA") : ActionButtonStyle()
+
+    // Minimal Outlined Action
     data class Outlined(val label: String, val tint: Color = TextSecondary) : ActionButtonStyle()
 }
 
 /**
- * Massive touch-friendly action button engineered for round Wear OS displays.
- * Incorporates horizontal insets to keep touch areas well clear of curved bezels.
+ * Premium Pill-shaped action button for circular Wear OS displays.
+ * Employs vibrant green for primary success and dark-grey secondary pills for exceptions.
  */
 @Composable
 fun DeliveryActionButton(
@@ -46,7 +62,7 @@ fun DeliveryActionButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val shape = RoundedCornerShape(26.dp)
+    val pillShape = RoundedCornerShape(26.dp)
 
     when (style) {
         is ActionButtonStyle.PrimaryGreen -> {
@@ -56,8 +72,8 @@ fun DeliveryActionButton(
                 modifier = modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .padding(horizontal = 14.dp),
-                shape = shape,
+                    .padding(horizontal = 12.dp),
+                shape = pillShape,
                 colors = ButtonDefaults.buttonColors(
                     backgroundColor = DeliveryGreen,
                     contentColor = Color.White
@@ -77,7 +93,7 @@ fun DeliveryActionButton(
                     }
                     Text(
                         text = style.label.uppercase(),
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
                         letterSpacing = 0.5.sp,
                         color = Color.White
@@ -86,22 +102,19 @@ fun DeliveryActionButton(
             }
         }
 
-        is ActionButtonStyle.DeliveredLight -> {
+        is ActionButtonStyle.DeliveredSuccess, is ActionButtonStyle.DeliveredLight -> {
+            val label = if (style is ActionButtonStyle.DeliveredSuccess) style.label else (style as ActionButtonStyle.DeliveredLight).label
             Button(
                 onClick = { onClick() },
                 enabled = enabled,
                 modifier = modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .padding(horizontal = 14.dp),
-                shape = shape,
-                border = ButtonDefaults.outlinedButtonBorder(
-                    borderColor = BorderSubtle,
-                    borderWidth = 1.dp
-                ),
+                    .padding(horizontal = 12.dp),
+                shape = pillShape,
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = SurfaceCard,
-                    contentColor = TextPrimary
+                    backgroundColor = DeliveryGreen,
+                    contentColor = Color.White
                 )
             ) {
                 Row(
@@ -111,35 +124,39 @@ fun DeliveryActionButton(
                     Text(
                         text = "✓",
                         fontWeight = FontWeight.Black,
-                        fontSize = 16.sp,
-                        color = DeliveryGreen,
+                        fontSize = 17.sp,
+                        color = Color.White,
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     Text(
-                        text = style.label.uppercase(),
+                        text = label.uppercase(),
                         fontWeight = FontWeight.ExtraBold,
                         fontSize = 14.sp,
-                        color = TextPrimary
+                        letterSpacing = 0.5.sp,
+                        color = Color.White
                     )
                 }
             }
         }
 
-        is ActionButtonStyle.AbsentLight -> {
+        is ActionButtonStyle.AbsentSecondary, is ActionButtonStyle.AbsentLight -> {
+            val title = if (style is ActionButtonStyle.AbsentSecondary) style.title else (style as ActionButtonStyle.AbsentLight).title
+            val subtitle = if (style is ActionButtonStyle.AbsentSecondary) style.subtitle else (style as ActionButtonStyle.AbsentLight).subtitle
+
             Button(
                 onClick = { onClick() },
                 enabled = enabled,
                 modifier = modifier
                     .fillMaxWidth()
                     .height(48.dp)
-                    .padding(horizontal = 14.dp),
-                shape = shape,
+                    .padding(horizontal = 12.dp),
+                shape = pillShape,
                 border = ButtonDefaults.outlinedButtonBorder(
                     borderColor = BorderSubtle,
                     borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = SurfaceCard,
+                    backgroundColor = SurfaceButtonSecondary,
                     contentColor = TextPrimary
                 )
             ) {
@@ -151,43 +168,45 @@ fun DeliveryActionButton(
                         Text(
                             text = "✕",
                             fontWeight = FontWeight.Black,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             color = AlertRed,
                             modifier = Modifier.padding(end = 6.dp)
                         )
                         Text(
-                            text = style.title.uppercase(),
-                            fontWeight = FontWeight.ExtraBold,
+                            text = title.uppercase(),
+                            fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             color = TextPrimary
                         )
                     }
                     Text(
-                        text = style.subtitle.uppercase(),
-                        fontWeight = FontWeight.Bold,
+                        text = subtitle.uppercase(),
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 9.sp,
                         color = TextSecondary,
-                        letterSpacing = 0.5.sp
+                        letterSpacing = 0.6.sp
                     )
                 }
             }
         }
 
-        is ActionButtonStyle.IncidentLight -> {
+        is ActionButtonStyle.IncidentSecondary, is ActionButtonStyle.IncidentLight -> {
+            val label = if (style is ActionButtonStyle.IncidentSecondary) style.label else (style as ActionButtonStyle.IncidentLight).label
+
             Button(
                 onClick = { onClick() },
                 enabled = enabled,
                 modifier = modifier
                     .fillMaxWidth()
-                    .height(38.dp)
-                    .padding(horizontal = 20.dp),
-                shape = shape,
+                    .height(40.dp)
+                    .padding(horizontal = 18.dp),
+                shape = pillShape,
                 border = ButtonDefaults.outlinedButtonBorder(
                     borderColor = BorderSubtle,
                     borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(
-                    backgroundColor = SurfaceCard,
+                    backgroundColor = SurfaceButtonSecondary,
                     contentColor = TextPrimary
                 )
             ) {
@@ -196,7 +215,7 @@ fun DeliveryActionButton(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = style.label.uppercase(),
+                        text = label.uppercase(),
                         fontWeight = FontWeight.Bold,
                         fontSize = 11.sp,
                         letterSpacing = 0.5.sp,
@@ -204,7 +223,7 @@ fun DeliveryActionButton(
                     )
                     Text(
                         text = " ⚠️",
-                        fontSize = 11.sp
+                        fontSize = 12.sp
                     )
                 }
             }
@@ -216,11 +235,11 @@ fun DeliveryActionButton(
                 enabled = enabled,
                 modifier = modifier
                     .fillMaxWidth()
-                    .height(38.dp)
-                    .padding(horizontal = 20.dp),
-                shape = shape,
+                    .height(40.dp)
+                    .padding(horizontal = 18.dp),
+                shape = pillShape,
                 border = ButtonDefaults.outlinedButtonBorder(
-                    borderColor = style.tint,
+                    borderColor = style.tint.copy(alpha = 0.6f),
                     borderWidth = 1.dp
                 ),
                 colors = ButtonDefaults.buttonColors(

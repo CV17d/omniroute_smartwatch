@@ -23,10 +23,11 @@ import com.omniroute.wear.ui.theme.BorderSubtle
 import com.omniroute.wear.ui.theme.DeliveryGreen
 import com.omniroute.wear.ui.theme.DeliveryGreenDark
 import com.omniroute.wear.ui.theme.MapLand
+import com.omniroute.wear.ui.theme.MapRoad
 import com.omniroute.wear.ui.theme.MapWater
 
 /**
- * Lightweight vector map canvas for Wear OS displaying route trajectory and stops.
+ * Modern dark-mode vector map canvas for Wear OS displaying route trajectory and stops.
  */
 @Composable
 fun WearMiniMap(
@@ -63,11 +64,12 @@ fun WearMiniMap(
             }
             drawPath(waterPath2, color = MapWater)
 
-            // Street lines
-            drawLine(Color.White, Offset(w * 0.2f, h * 0.9f), Offset(w * 0.85f, h * 0.3f), strokeWidth = 5f)
-            drawLine(Color.White, Offset(w * 0.35f, h), Offset(w * 0.95f, h * 0.45f), strokeWidth = 5f)
+            // Dark subtle street lines
+            drawLine(MapRoad, Offset(w * 0.2f, h * 0.9f), Offset(w * 0.85f, h * 0.3f), strokeWidth = 4f)
+            drawLine(MapRoad, Offset(w * 0.35f, h), Offset(w * 0.95f, h * 0.45f), strokeWidth = 4f)
+            drawLine(MapRoad, Offset(w * 0.1f, h * 0.5f), Offset(w * 0.65f, h * 0.1f), strokeWidth = 3f)
 
-            // Green Route Polyline
+            // Vibrant Green Route Polyline
             val routePath = Path().apply {
                 moveTo(w * 0.48f, h * 0.78f)
                 lineTo(w * 0.42f, h * 0.62f)
@@ -81,7 +83,7 @@ fun WearMiniMap(
             drawPath(
                 routePath,
                 color = DeliveryGreen,
-                style = Stroke(width = 7f, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                style = Stroke(width = 6.5f, cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
 
             // Waypoints
@@ -94,8 +96,8 @@ fun WearMiniMap(
                 Offset(w * 0.72f, h * 0.20f)
             )
             for (pt in waypoints) {
-                drawCircle(color = DeliveryGreen, radius = 6f, center = pt)
-                drawCircle(color = Color.White, radius = 3.5f, center = pt)
+                drawCircle(color = DeliveryGreen, radius = 5.5f, center = pt)
+                drawCircle(color = Color.White, radius = 3f, center = pt)
             }
 
             // Courier Active Pin

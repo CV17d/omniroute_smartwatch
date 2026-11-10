@@ -21,7 +21,7 @@ import com.omniroute.wear.ui.theme.SurfaceCard
 import com.omniroute.wear.ui.theme.TextPrimary
 
 /**
- * Compact pill badge for vehicle types ("MOTO") and status metadata.
+ * Compact dark pill badge for vehicle types ("MOTO") and status metadata.
  */
 @Composable
 fun StatusBadge(
@@ -34,10 +34,10 @@ fun StatusBadge(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(6.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(backgroundColor)
-            .border(BorderStroke(0.5.dp, borderColor), RoundedCornerShape(6.dp))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(8.dp))
+            .padding(horizontal = 7.dp, vertical = 2.5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -54,7 +54,7 @@ fun StatusBadge(
             text = text.uppercase(),
             fontSize = 9.sp,
             fontWeight = FontWeight.ExtraBold,
-            letterSpacing = 0.4.sp,
+            letterSpacing = 0.5.sp,
             color = textColor
         )
     }

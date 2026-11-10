@@ -3,6 +3,7 @@ package com.omniroute.wear.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,8 +26,8 @@ import com.omniroute.wear.ui.theme.TextPrimary
 import com.omniroute.wear.ui.theme.TextSecondary
 
 /**
- * Screen 1: Route start overview with mini-map, progress badge, and start action.
- * Utilizes ScalingLazyColumn for native Wear OS curved viewport adaptation.
+ * Screen 1: Route start overview with dark OLED mini-map, progress badge, and pill start action.
+ * Employs ScalingLazyColumn with custom contentPadding to eliminate bottom clipping on circular displays.
  */
 @Composable
 fun RouteStartScreen(
@@ -43,15 +44,16 @@ fun RouteStartScreen(
             .fillMaxSize()
             .background(BackgroundPrimary),
         state = listState,
+        contentPadding = PaddingValues(top = 28.dp, bottom = 44.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         // 1. Header (OMNIROUTE / RUTA: MOTO)
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
+                    .padding(top = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -79,7 +81,7 @@ fun RouteStartScreen(
             }
         }
 
-        // 2. Vector Map
+        // 2. Vector Map (Dark OLED Mode)
         item {
             WearMiniMap(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
@@ -94,12 +96,12 @@ fun RouteStartScreen(
             )
         }
 
-        // 4. Action Button ("INICIAR RUTA")
+        // 4. Action Button ("INICIAR RUTA" - Vibrant Green Pill)
         item {
             DeliveryActionButton(
                 style = ActionButtonStyle.PrimaryGreen(label = "INICIAR RUTA"),
                 onClick = onStartRoute,
-                modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
     }

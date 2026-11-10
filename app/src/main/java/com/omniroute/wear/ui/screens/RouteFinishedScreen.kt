@@ -3,6 +3,7 @@ package com.omniroute.wear.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ fun RouteFinishedScreen(
             .fillMaxSize()
             .background(BackgroundPrimary),
         state = listState,
+        contentPadding = PaddingValues(top = 28.dp, bottom = 44.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -45,7 +47,7 @@ fun RouteFinishedScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
+                    .padding(top = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = "🏁", fontSize = 24.sp)
@@ -79,9 +81,9 @@ fun RouteFinishedScreen(
 
         item {
             DeliveryActionButton(
-                style = ActionButtonStyle.Outlined(label = "REINICIAR DEMO", tint = DeliveryGreen),
+                style = ActionButtonStyle.PrimaryGreen(label = "REINICIAR DEMO"),
                 onClick = onReset,
-                modifier = Modifier.padding(top = 6.dp, bottom = 12.dp)
+                modifier = Modifier.padding(top = 6.dp)
             )
         }
     }

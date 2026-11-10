@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -32,8 +33,9 @@ import com.omniroute.wear.ui.theme.TextPrimary
 import com.omniroute.wear.ui.theme.TextSecondary
 
 /**
- * Screen 3: Rapid 3-second delivery confirmation modal.
- * Features high-contrast dropoff buttons for delivered vs absent states.
+ * Screen 3: Rapid 3-second delivery confirmation screen for Wear OS OLED Dark Mode.
+ * Features vibrant green success pill ("✓ ENTREGADO") and dark-grey secondary pill ("✕ NO ENTREGADO / AUSENTE").
+ * Content padding prevents bezel clipping on round smartwatches.
  */
 @Composable
 fun DeliveryConfirmationScreen(
@@ -50,15 +52,16 @@ fun DeliveryConfirmationScreen(
             .fillMaxSize()
             .background(BackgroundPrimary),
         state = listState,
+        contentPadding = PaddingValues(top = 28.dp, bottom = 44.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // 1. Header (ENTREGAR PAQUETE)
+        // 1. Header (ENTREGAR PAQUETE & Street Address)
         item {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 10.dp),
+                    .padding(top = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -93,14 +96,14 @@ fun DeliveryConfirmationScreen(
                     ) {
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(42.dp)
                                 .clip(CircleShape)
                                 .background(DeliveryGreenLight),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = "✓",
-                                fontSize = 22.sp,
+                                fontSize = 24.sp,
                                 fontWeight = FontWeight.Black,
                                 color = DeliveryGreen
                             )
@@ -116,21 +119,21 @@ fun DeliveryConfirmationScreen(
                 }
             }
         } else {
-            // 3. Positive Action: "✓ ENTREGADO"
+            // 3. Positive Action: "✓ ENTREGADO" (Vibrant Green Pill)
             item {
                 DeliveryActionButton(
-                    style = ActionButtonStyle.DeliveredLight(label = "ENTREGADO"),
+                    style = ActionButtonStyle.DeliveredSuccess(label = "ENTREGADO"),
                     onClick = onConfirmDelivered,
                     modifier = Modifier.padding(top = 4.dp)
                 )
             }
 
-            // 4. Negative Action: "✕ NO ENTREGADO / AUSENTE"
+            // 4. Negative Action: "✕ NO ENTREGADO / AUSENTE" (Dark Grey Pill with border to prevent accidental taps)
             item {
                 DeliveryActionButton(
-                    style = ActionButtonStyle.AbsentLight(title = "NO ENTREGADO", subtitle = "AUSENTE"),
+                    style = ActionButtonStyle.AbsentSecondary(title = "NO ENTREGADO", subtitle = "AUSENTE"),
                     onClick = onConfirmAbsent,
-                    modifier = Modifier.padding(bottom = 12.dp)
+                    modifier = Modifier.padding(top = 2.dp)
                 )
             }
         }

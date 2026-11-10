@@ -3,36 +3,39 @@ package com.omniroute.wear.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // ==========================================
-// OmniRoute Wear OS - Light Mode Palette Tokens
+// OmniRoute Wear OS - Modern OLED Dark Palette Tokens
 // ==========================================
 
-// Delivery Primary Greens
-val DeliveryGreen = Color(0xFF22B061)
-val DeliveryGreenDark = Color(0xFF168A48)
-val DeliveryGreenLight = Color(0xFFE8F8EE)
+// Delivery Primary Greens (Vibrant & High Contrast for OLED)
+val DeliveryGreen = Color(0xFF22B061)        // Vibrant emerald green
+val DeliveryGreenDark = Color(0xFF15803D)    // Darker pressed/accent green
+val DeliveryGreenLight = Color(0xFF064E3B)   // Subtle dark green container for status/feedback
 
 // Alert & Incident Accents
-val AlertRed = Color(0xFFE03838)
-val AlertRedLight = Color(0xFFFDE8E8)
-val WarningAmber = Color(0xFFF29927)
-val WarningAmberLight = Color(0xFFFEF4E6)
+val AlertRed = Color(0xFFEF4444)            // Modern alert red
+val AlertRedDark = Color(0xFF991B1B)        // Deep alert red
+val AlertRedLight = Color(0xFF450A0A)       // Subtle dark red surface
+val WarningAmber = Color(0xFFF59E0B)        // Vibrant warning amber
+val WarningAmberLight = Color(0xFF451A03)
 
-// Light Mode Surfaces & Canvas
-val BackgroundPrimary = Color(0xFFFFFFFF)
-val BackgroundSecondary = Color(0xFFF5F7FA)
-val SurfaceCard = Color(0xFFEEF0F4)
-val SurfaceCardElevated = Color(0xFFE2E6EC)
+// Pure OLED Black Surfaces & Backgrounds (Battery-saving & High Contrast)
+val BackgroundPrimary = Color(0xFF000000)   // Pure OLED Black
+val BackgroundSecondary = Color(0xFF0B0D11) // Deepest charcoal canvas
+val SurfaceCard = Color(0xFF1A1F26)         // Dark Grey Card Surface
+val SurfaceCardElevated = Color(0xFF242B35) // Elevated dark surface
+val SurfaceButtonSecondary = Color(0xFF202630) // Dark pill surface for secondary actions
 
-// High-Contrast Typography
-val TextPrimary = Color(0xFF121417)
-val TextSecondary = Color(0xFF5B6471)
-val TextTertiary = Color(0xFF8A94A6)
+// High-Contrast Typography for OLED
+val TextPrimary = Color(0xFFFFFFFF)         // Pure Crisp White
+val TextSecondary = Color(0xFFB0B7C3)       // Soft Light Grey
+val TextTertiary = Color(0xFF6B7280)        // Muted Slate Grey
 
 // Borders & Dividers
-val BorderSubtle = Color(0xFFD5DAE1)
-val BorderStrong = Color(0xFFB0B7C3)
+val BorderSubtle = Color(0xFF2D3542)        // Subtle boundary stroke
+val BorderStrong = Color(0xFF475569)        // Accent outline stroke
 
-// Vector Map Visuals
-val MapLand = Color(0xFFF4F1EA)
-val MapWater = Color(0xFFB8DCED)
-val RoutePolyline = Color(0xFF22B061)
+// Vector Map Visuals (Dark Mode OLED Map)
+val MapLand = Color(0xFF13161C)             // Dark terrain
+val MapWater = Color(0xFF0F1B2B)            // Deep midnight coastal water
+val MapRoad = Color(0xFF252B36)             // Muted dark street lines
+val RoutePolyline = Color(0xFF22B061)       // Vibrant glowing route polyline

@@ -2,6 +2,7 @@ package com.omniroute.wear.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,8 +24,10 @@ import com.omniroute.wear.ui.theme.BackgroundPrimary
 import com.omniroute.wear.ui.theme.TextPrimary
 
 /**
- * Screen 2: Active delivery in-progress view.
- * Features navigation instruction, hero street address, and prominent "¡LLEGUE!" action.
+ * Screen 2: Active delivery in-progress view for OLED Dark Mode.
+ * Features navigation instruction, hero street address, vibrant green "¡LLEGUE!" button,
+ * and dark-grey secondary pill "INCIDENCIA" button.
+ * Uses contentPadding to ensure buttons scroll cleanly past curved circular bezels.
  */
 @Composable
 fun ActiveDeliveryScreen(
@@ -44,6 +47,7 @@ fun ActiveDeliveryScreen(
             .fillMaxSize()
             .background(BackgroundPrimary),
         state = listState,
+        contentPadding = PaddingValues(top = 28.dp, bottom = 44.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
@@ -52,7 +56,7 @@ fun ActiveDeliveryScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 4.dp),
+                    .padding(horizontal = 14.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -75,7 +79,7 @@ fun ActiveDeliveryScreen(
             }
         }
 
-        // 2. Hero Street Address Card
+        // 2. Hero Street Address Card (Crisp White & Light Grey)
         item {
             AddressCard(
                 address = address,
@@ -85,7 +89,7 @@ fun ActiveDeliveryScreen(
             )
         }
 
-        // 3. Primary Massive Action: "¡LLEGUE!"
+        // 3. Primary Massive Action: "¡LLEGUE!" (Vibrant Green Pill)
         item {
             DeliveryActionButton(
                 style = ActionButtonStyle.PrimaryGreen(label = "¡LLEGUE!"),
@@ -94,12 +98,12 @@ fun ActiveDeliveryScreen(
             )
         }
 
-        // 4. Secondary Action: "INCIDENCIA ⚠️"
+        // 4. Secondary Action: "INCIDENCIA ⚠️" (Dark Grey Pill with border to prevent accidental taps)
         item {
             DeliveryActionButton(
-                style = ActionButtonStyle.IncidentLight(label = "INCIDENCIA"),
+                style = ActionButtonStyle.IncidentSecondary(label = "INCIDENCIA"),
                 onClick = onIncident,
-                modifier = Modifier.padding(bottom = 12.dp),
+                modifier = Modifier.padding(top = 2.dp),
             )
         }
     }

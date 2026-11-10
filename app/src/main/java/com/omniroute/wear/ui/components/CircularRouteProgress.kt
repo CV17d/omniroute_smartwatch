@@ -8,19 +8,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.CircularProgressIndicator
-import androidx.wear.compose.material.ProgressIndicatorDefaults
 import androidx.wear.compose.material.Text
 import com.omniroute.wear.ui.theme.BorderSubtle
 import com.omniroute.wear.ui.theme.DeliveryGreen
@@ -28,8 +25,7 @@ import com.omniroute.wear.ui.theme.SurfaceCard
 import com.omniroute.wear.ui.theme.TextPrimary
 
 /**
- * Renders the glanceable "4/15 ENTREGAS" pill badge with an embedded
- * circular progress indicator matching the watch design.
+ * Renders the glanceable "4/15 ENTREGAS" pill badge on a dark OLED surface.
  */
 @Composable
 fun CircularRouteProgress(
@@ -44,10 +40,10 @@ fun CircularRouteProgress(
 
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
+            .clip(RoundedCornerShape(14.dp))
             .background(SurfaceCard)
-            .border(BorderStroke(1.dp, BorderSubtle), RoundedCornerShape(12.dp))
-            .padding(horizontal = 8.dp, vertical = 3.dp),
+            .border(BorderStroke(1.dp, BorderSubtle), RoundedCornerShape(14.dp))
+            .padding(horizontal = 9.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -56,7 +52,7 @@ fun CircularRouteProgress(
             fontSize = 10.sp,
             fontWeight = FontWeight.ExtraBold,
             color = TextPrimary,
-            modifier = Modifier.padding(end = 5.dp)
+            modifier = Modifier.padding(end = 6.dp)
         )
 
         Box(

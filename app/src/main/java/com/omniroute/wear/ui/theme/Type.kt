@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Typography
 
 // ==========================================
-// OmniRoute Wear OS - Glanceable Typography
+// OmniRoute Wear OS - Glanceable OLED Typography
 // ==========================================
 
 val OmniWearTypography = Typography(
@@ -39,13 +39,13 @@ val OmniWearTypography = Typography(
         textAlign = TextAlign.Center,
         color = TextPrimary
     ),
-    // Large Massive Button Label (e.g., "¡LLEGUE!", "INICIAR RUTA")
+    // Large Massive Button Label (e.g., "¡LLEGUE!", "INICIAR RUTA", "ENTREGADO")
     button = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
         letterSpacing = 0.5.sp,
-        color = Color(0xFFFFFFFF)
+        color = Color.White
     ),
     // Navigation Manoeuvre (e.g., "150m - Continuar abajo")
     body1 = TextStyle(

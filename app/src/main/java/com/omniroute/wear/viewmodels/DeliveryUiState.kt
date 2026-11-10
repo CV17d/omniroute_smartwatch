@@ -18,7 +18,6 @@ data class DeliveryUiState(
     val pendingSyncCount: Int = 0,
     val confirmationFeedback: String? = null,
     val isIncidentModalVisible: Boolean = false,
-    val isOfflineAlertVisible: Boolean = false,
     val isLoading: Boolean = false
 ) {
     val currentStop: DeliveryStop?

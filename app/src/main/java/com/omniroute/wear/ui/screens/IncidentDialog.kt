@@ -2,6 +2,7 @@ package com.omniroute.wear.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ fun IncidentDialog(
             .fillMaxSize()
             .background(BackgroundPrimary),
         state = listState,
+        contentPadding = PaddingValues(top = 28.dp, bottom = 44.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
@@ -48,7 +50,7 @@ fun IncidentDialog(
                 fontWeight = FontWeight.Black,
                 fontSize = 12.sp,
                 color = WarningAmber,
-                modifier = Modifier.padding(top = 8.dp)
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
 
@@ -64,7 +66,7 @@ fun IncidentDialog(
             DeliveryActionButton(
                 style = ActionButtonStyle.Outlined(label = "CANCELAR", tint = TextSecondary),
                 onClick = onCancel,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(top = 2.dp)
             )
         }
     }

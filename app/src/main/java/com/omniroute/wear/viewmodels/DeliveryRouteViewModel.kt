@@ -32,10 +32,7 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             repository.isOnline.collect { online ->
                 _uiState.update {
-                    it.copy(
-                        isOnline = online,
-                        isOfflineAlertVisible = !online || it.pendingSyncCount > 0
-                    )
+                    it.copy(isOnline = online)
                 }
             }
         }
@@ -44,10 +41,7 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             repository.pendingSyncCount.collect { count ->
                 _uiState.update {
-                    it.copy(
-                        pendingSyncCount = count,
-                        isOfflineAlertVisible = !it.isOnline || count > 0
-                    )
+                    it.copy(pendingSyncCount = count)
                 }
             }
         }
@@ -66,12 +60,12 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
             }
         }
 
-        // Initial fetch from Spring Boot backend over HTTP
+        // Initial fetch from backend over HTTP
         fetchActiveRoute()
     }
 
     /**
-     * Triggers active route fetch from Spring Boot backend (GET /api/wearable/routes/active).
+     * Triggers active route fetch from backend (GET /api/wearable/routes/active).
      */
     fun fetchActiveRoute() {
         viewModelScope.launch {
