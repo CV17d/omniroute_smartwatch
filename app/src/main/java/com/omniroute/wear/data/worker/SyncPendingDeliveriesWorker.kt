@@ -1,6 +1,7 @@
 package com.omniroute.wear.data.worker
 
 import android.content.Context
+import android.util.Log
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
@@ -43,6 +44,11 @@ class SyncPendingDeliveriesWorker(
 
                 if (response.isSuccessful) {
                     dao.deletePendingSync(item)
+                } else if (isPermanentFailure(response.code())) {
+                    // The backend rejected this update (e.g. invalid stop id). Retrying will never
+                    // succeed, so drop it instead of looping forever.
+                    Log.w(TAG, "Dropping pending sync for stop ${item.stopId}: HTTP ${response.code()}")
+                    dao.deletePendingSync(item)
                 } else {
                     dao.incrementSyncAttempts(item.syncId)
                     anyFailures = true
@@ -62,6 +68,14 @@ class SyncPendingDeliveriesWorker(
 
     companion object {
         const val UNIQUE_WORK_NAME = "SyncPendingDeliveriesWork"
+        private const val TAG = "SyncPendingDeliveries"
+
+        /**
+         * 4xx responses mean the request itself is invalid, so retrying won't help.
+         * 408 (timeout) and 429 (rate limit) are temporary and still worth retrying.
+         */
+        fun isPermanentFailure(httpCode: Int): Boolean =
+            httpCode in 400..499 && httpCode != 408 && httpCode != 429
 
         /**
          * Enqueues an expedited or deferred sync task requiring internet connection (Wi-Fi or LTE).

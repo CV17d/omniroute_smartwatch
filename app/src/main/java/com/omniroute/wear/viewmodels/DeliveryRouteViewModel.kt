@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.omniroute.wear.data.repository.DeliveryRepository
 import com.omniroute.wear.domain.model.DeliveryStatus
 import com.omniroute.wear.domain.model.RouteSummary
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,10 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
 
     private val _uiState = MutableStateFlow(DeliveryUiState())
     val uiState: StateFlow<DeliveryUiState> = _uiState.asStateFlow()
+
+    // Declared before init so the initial fetch in init can set them.
+    private var autoRefreshJob: Job? = null
+    private var lastFetchAtMs = 0L
 
     init {
         // Observe direct internet connectivity (Wi-Fi / LTE)
@@ -68,6 +73,7 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
      * Triggers active route fetch from backend (GET /api/wearable/routes/active).
      */
     fun fetchActiveRoute() {
+        lastFetchAtMs = System.currentTimeMillis()
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             val result = repository.fetchActiveRoute()
@@ -215,6 +221,59 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
     }
 
     /**
+     * Polls the backend for the active route while the app is on screen, so routes assigned
+     * from the dashboard show up without reopening the app. Call from onStart.
+     */
+    fun startAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = viewModelScope.launch {
+            while (true) {
+                // Skip the immediate refresh if we just fetched (e.g. on cold start).
+                if (System.currentTimeMillis() - lastFetchAtMs >= RECENT_FETCH_WINDOW_MS) {
+                    refreshRouteSilently()
+                }
+                delay(AUTO_REFRESH_INTERVAL_MS)
+            }
+        }
+    }
+
+    /** Stops polling to save battery when the app leaves the screen. Call from onStop. */
+    fun stopAutoRefresh() {
+        autoRefreshJob?.cancel()
+        autoRefreshJob = null
+    }
+
+    /**
+     * Background refresh without the loading indicator. Skipped while the courier is mid-action,
+     * and while local updates are still queued (the backend copy would overwrite them).
+     */
+    private suspend fun refreshRouteSilently() {
+        val state = _uiState.value
+        val busy = state.currentScreen == ScreenDestination.DELIVERY_CONFIRMATION ||
+            state.confirmationFeedback != null ||
+            state.isIncidentModalVisible ||
+            state.pendingSyncCount > 0 ||
+            !state.isOnline
+        if (busy) return
+
+        lastFetchAtMs = System.currentTimeMillis()
+        val previousRouteId = state.route.id
+        repository.fetchActiveRoute().onSuccess { route ->
+            // Same route: the Room observer already applies stop changes.
+            // New route: show it from its start screen.
+            if (route.id != previousRouteId) {
+                _uiState.update {
+                    it.copy(
+                        route = route,
+                        currentStopIndex = route.activeStopIndex,
+                        currentScreen = ScreenDestination.ROUTE_START,
+                    )
+                }
+            }
+        }
+    }
+
+    /**
      * Starts STOMP WebSocket connection and subscribes to /topic/route-updates.
      */
     fun startRealtimeSync() {
@@ -232,19 +291,29 @@ class DeliveryRouteViewModel @JvmOverloads constructor(
         }
     }
 
+    companion object {
+        private const val AUTO_REFRESH_INTERVAL_MS = 30_000L
+        private const val RECENT_FETCH_WINDOW_MS = 5_000L
+    }
+
     override fun onCleared() {
+        repository.cleanup()
         super.onCleared()
-        stopRealtimeSync()
     }
 
     class Factory(
         private val application: Application,
-        private val repository: DeliveryRepository
+        private val repositoryProvider: () -> DeliveryRepository = { DeliveryRepository(application) }
     ) : ViewModelProvider.Factory {
+        constructor(application: Application, repository: DeliveryRepository) : this(
+            application = application,
+            repositoryProvider = { repository }
+        )
+
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(DeliveryRouteViewModel::class.java)) {
-                return DeliveryRouteViewModel(application, repository) as T
+                return DeliveryRouteViewModel(application, repositoryProvider()) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
         }

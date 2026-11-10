@@ -22,12 +22,16 @@ data class RouteSummaryDto(
     val totalDistanceKm: Double = 0.0
 ) {
     fun toDomainModel(): RouteSummary {
+        @Suppress("USELESS_ELVIS")
+        val safeStops = (stops ?: emptyList()).map { it.toDomainModel() }
+        val effectiveTotal = if (totalStops > 0) totalStops else safeStops.size
+        @Suppress("USELESS_ELVIS")
         return RouteSummary(
-            id = id,
-            routeName = routeName,
-            vehicleType = vehicleType,
-            stops = stops.map { it.toDomainModel() },
-            totalStops = totalStops,
+            id = id ?: "route-default",
+            routeName = routeName ?: "Ruta Activa",
+            vehicleType = vehicleType ?: "MOTO",
+            stops = safeStops,
+            totalStops = effectiveTotal,
             completedStops = completedStops,
             totalDistanceKm = totalDistanceKm
         )
@@ -59,22 +63,25 @@ data class DeliveryStopDto(
     val notes: String? = null
 ) {
     fun toDomainModel(): DeliveryStop {
+        @Suppress("USELESS_ELVIS")
+        val rawStatus = status ?: "PENDING"
         val parsedStatus = try {
-            DeliveryStatus.valueOf(status.uppercase())
+            DeliveryStatus.valueOf(rawStatus.uppercase())
         } catch (_: Exception) {
             DeliveryStatus.PENDING
         }
 
+        @Suppress("USELESS_ELVIS")
         return DeliveryStop(
-            id = id,
+            id = id ?: "stop-$stopNumber",
             stopNumber = stopNumber,
-            address = address,
-            recipientName = recipientName,
+            address = address ?: "Sin dirección",
+            recipientName = recipientName ?: "Destinatario",
             apartmentOrSuite = apartmentOrSuite,
-            packageId = packageId,
-            distanceText = distanceText,
-            navigationInstruction = navigationInstruction,
-            turnDirection = turnDirection,
+            packageId = packageId ?: "PKG-$stopNumber",
+            distanceText = distanceText ?: "150m",
+            navigationInstruction = navigationInstruction ?: "Continuar",
+            turnDirection = turnDirection ?: "↓",
             status = parsedStatus,
             notes = notes
         )

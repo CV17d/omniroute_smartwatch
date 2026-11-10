@@ -11,8 +11,10 @@ import java.util.concurrent.TimeUnit
  */
 object ApiClient {
 
-    // URL Pública Segura (HTTPS) vía Cloudflare Tunnel: Funciona en Emulador, Reloj Físico por Wi-Fi y Reloj en la calle por Bluetooth/4G
-    private const val BASE_URL = "https://science-marble-strap-strengths.trycloudflare.com/"
+    // IP de la PC en la red Wi-Fi local (backend en Docker, puerto 8080).
+    // El reloj debe estar en la misma Wi-Fi. Si la IP de la PC cambia, actualizar aquí.
+    // Para usarlo fuera de la red local, reemplazar por la URL de un túnel HTTPS (ej. cloudflared).
+    private const val BASE_URL = "http://172.162.1.53:8080/"
 
     private val loggingInterceptor by lazy {
         HttpLoggingInterceptor().apply {

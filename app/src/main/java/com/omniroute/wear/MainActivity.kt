@@ -40,10 +40,12 @@ class MainActivity : ComponentActivity() {
     private val viewModel: DeliveryRouteViewModel by viewModels {
         DeliveryRouteViewModel.Factory(
             application = application,
-            repository = DeliveryRepository(
-                context = applicationContext,
-                dao = RouteDatabase.getDatabase(applicationContext).deliveryDao(),
-            ),
+            repositoryProvider = {
+                DeliveryRepository(
+                    context = applicationContext,
+                    dao = RouteDatabase.getDatabase(applicationContext).deliveryDao(),
+                )
+            },
         )
     }
 
@@ -171,10 +173,12 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         viewModel.startRealtimeSync()
+        viewModel.startAutoRefresh()
     }
 
     override fun onStop() {
         super.onStop()
         viewModel.stopRealtimeSync()
+        viewModel.stopAutoRefresh()
     }
 }

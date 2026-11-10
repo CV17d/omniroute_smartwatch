@@ -49,11 +49,14 @@ class DeliveryRepository(
         const val DESTINATION_DELIVERY_STATUS = "/app/delivery.status"
     }
 
+    private val appContext = context.applicationContext
     private val repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    private val connectivityManager =
+        appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
     private val gson = Gson()
 
     private var stompSubscriptionJob: Job? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
 
     private val _isOnline = MutableStateFlow(checkInitialInternet())
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
@@ -155,6 +158,12 @@ class DeliveryRepository(
             dao.updateCompletedStops(currentRoute.id, completedCount)
         }
 
+        // Intermediate states (e.g. ARRIVED) only drive the watch UI. The backend only accepts
+        // final states (DELIVERED, ABSENT, INCIDENT), so don't send or queue the others.
+        if (!newStatus.isFinalState) {
+            return@withContext true
+        }
+
         // 2. Instant real-time STOMP broadcast to Spring Boot -> React web dashboard
         val stompPayload = DeliveryStatusStompDto(
             stopId = stopId,
@@ -176,19 +185,24 @@ class DeliveryRepository(
         )
 
         var directPostSuccessful = false
+        var rejectedByBackend = false
         if (_isOnline.value) {
             try {
                 val response = apiService.updateDeliveryStatus(stopId, requestDto)
                 if (response.isSuccessful) {
                     directPostSuccessful = true
+                } else if (SyncPendingDeliveriesWorker.isPermanentFailure(response.code())) {
+                    rejectedByBackend = true
+                    Log.w(TAG, "Backend rejected status update for stop $stopId: HTTP ${response.code()}")
                 }
             } catch (_: Exception) {
                 directPostSuccessful = false
             }
         }
 
-        // 4. If direct POST failed or offline, enqueue in Room for WorkManager
-        if (!directPostSuccessful) {
+        // 4. If direct POST failed or offline, enqueue in Room for WorkManager.
+        // Updates the backend rejected as invalid are not queued: retrying them can never succeed.
+        if (!directPostSuccessful && !rejectedByBackend) {
             dao.insertPendingSync(
                 PendingDeliverySyncEntity(
                     stopId = stopId,
@@ -198,7 +212,7 @@ class DeliveryRepository(
                 ),
             )
             // Schedule WorkManager deferred sync
-            SyncPendingDeliveriesWorker.enqueue(context)
+            SyncPendingDeliveriesWorker.enqueue(appContext)
         }
 
         directPostSuccessful
@@ -262,30 +276,49 @@ class DeliveryRepository(
      * Triggers manual synchronization of pending mutations and refreshes route.
      */
     fun triggerManualSync() {
-        SyncPendingDeliveriesWorker.enqueue(context)
+        SyncPendingDeliveriesWorker.enqueue(appContext)
         repositoryScope.launch {
             fetchActiveRoute()
         }
     }
 
+    /**
+     * Releases network callbacks and disconnects STOMP safely when ViewModel is cleared.
+     */
+    fun cleanup() {
+        try {
+            networkCallback?.let { connectivityManager.unregisterNetworkCallback(it) }
+            networkCallback = null
+        } catch (e: Exception) {
+            Log.w(TAG, "Error unregistering network callback: ${e.message}")
+        }
+        repositoryScope.launch {
+            stopRealtimeSync()
+        }
+    }
+
     private fun checkInitialInternet(): Boolean {
-        val activeNetwork = connectivityManager.activeNetwork ?: return false
-        val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        return try {
+            val activeNetwork = connectivityManager.activeNetwork ?: return false
+            val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+        } catch (e: Exception) {
+            Log.w(TAG, "Unable to inspect initial network state: ${e.message}")
+            false
+        }
     }
 
     private fun registerNetworkCallback() {
-        val request = NetworkRequest.Builder()
-            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-            .build()
+        try {
+            val request = NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .build()
 
-        connectivityManager.registerNetworkCallback(
-            request,
-            object : ConnectivityManager.NetworkCallback() {
+            val callback = object : ConnectivityManager.NetworkCallback() {
                 override fun onAvailable(network: Network) {
                     _isOnline.value = true
                     // Network restored: trigger background sync of queued mutations and reconnect STOMP
-                    SyncPendingDeliveriesWorker.enqueue(context)
+                    SyncPendingDeliveriesWorker.enqueue(appContext)
                     repositoryScope.launch {
                         startRealtimeSync()
                     }
@@ -297,7 +330,11 @@ class DeliveryRepository(
                         stopRealtimeSync()
                     }
                 }
-            },
-        )
+            }
+            networkCallback = callback
+            connectivityManager.registerNetworkCallback(request, callback)
+        } catch (e: Exception) {
+            Log.w(TAG, "Unable to register network callback: ${e.message}")
+        }
     }
 }
