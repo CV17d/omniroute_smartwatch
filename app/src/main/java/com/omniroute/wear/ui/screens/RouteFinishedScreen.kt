@@ -1,13 +1,9 @@
 package com.omniroute.wear.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,11 +15,7 @@ import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material.Text
 import com.omniroute.wear.ui.components.ActionButtonStyle
 import com.omniroute.wear.ui.components.DeliveryActionButton
-import com.omniroute.wear.ui.theme.AlertRed
-import com.omniroute.wear.ui.theme.BackgroundPrimary
-import com.omniroute.wear.ui.theme.DeliveryGreen
-import com.omniroute.wear.ui.theme.TextPrimary
-import com.omniroute.wear.ui.theme.TextSecondary
+import com.omniroute.wear.ui.theme.OmniTheme
 
 @Composable
 fun RouteFinishedScreen(
@@ -33,11 +25,12 @@ fun RouteFinishedScreen(
     modifier: Modifier = Modifier
 ) {
     val listState = rememberScalingLazyListState()
+    val colors = OmniTheme.colors
 
     ScalingLazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .background(BackgroundPrimary),
+            .background(colors.background),
         state = listState,
         contentPadding = PaddingValues(top = 28.dp, bottom = 44.dp, start = 8.dp, end = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -55,7 +48,7 @@ fun RouteFinishedScreen(
                     text = "¡RUTA COMPLETADA!",
                     fontWeight = FontWeight.Black,
                     fontSize = 13.sp,
-                    color = TextPrimary,
+                    color = colors.textPrimary,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -69,19 +62,32 @@ fun RouteFinishedScreen(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "$deliveredCount", fontWeight = FontWeight.Black, fontSize = 18.sp, color = DeliveryGreen)
-                    Text(text = "Entregados", fontSize = 9.sp, color = TextSecondary)
+                    Text(
+                        text = "$deliveredCount",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                        color = colors.primaryGreen
+                    )
+                    Text(text = "Entregados", fontSize = 9.sp, color = colors.textSecondary)
                 }
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(text = "$absentCount", fontWeight = FontWeight.Black, fontSize = 18.sp, color = AlertRed)
-                    Text(text = "Ausentes", fontSize = 9.sp, color = TextSecondary)
+                    Text(
+                        text = "$absentCount",
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                        color = colors.negativeText
+                    )
+                    Text(text = "Ausentes", fontSize = 9.sp, color = colors.textSecondary)
                 }
             }
         }
 
         item {
             DeliveryActionButton(
-                style = ActionButtonStyle.PrimaryGreen(label = "REINICIAR DEMO"),
+                style = ActionButtonStyle.PrimaryGreen(
+                    label = "REINICIAR DEMO",
+                    icon = Icons.Rounded.Refresh
+                ),
                 onClick = onReset,
                 modifier = Modifier.padding(top = 6.dp)
             )

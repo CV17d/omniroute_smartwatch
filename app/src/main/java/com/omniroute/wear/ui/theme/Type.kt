@@ -9,70 +9,64 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Typography
 
 // ==========================================
-// OmniRoute Wear OS - Glanceable OLED Typography
+// OmniRoute Wear OS - Dynamic Typography
+// Colors remain Unspecified so LocalContentColor / Theme adapts automatically
 // ==========================================
 
 val OmniWearTypography = Typography(
-    // App Header (e.g., "OMNIROUTE")
     title1 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Black,
         fontSize = 15.sp,
         letterSpacing = 0.5.sp,
         textAlign = TextAlign.Center,
-        color = TextPrimary
+        color = Color.Unspecified
     ),
-    // Hero Address (e.g., "CALLE 22 # 5-43")
     title2 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.ExtraBold,
         fontSize = 16.sp,
         letterSpacing = 0.sp,
         textAlign = TextAlign.Center,
-        color = TextPrimary
+        color = Color.Unspecified
     ),
-    // Medium Header / Subtitle
     title3 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 13.sp,
         textAlign = TextAlign.Center,
-        color = TextPrimary
+        color = Color.Unspecified
     ),
-    // Large Massive Button Label (e.g., "¡LLEGUE!", "INICIAR RUTA", "ENTREGADO")
     button = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 14.sp,
         letterSpacing = 0.5.sp,
-        color = Color.White
+        color = Color.Unspecified
     ),
-    // Navigation Manoeuvre (e.g., "150m - Continuar abajo")
     body1 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
         fontSize = 12.sp,
-        color = TextPrimary
+        color = Color.Unspecified
     ),
-    // Recipient & Package Details (e.g., "Envia • Apt 302")
     body2 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
         fontSize = 11.sp,
-        color = TextSecondary
+        color = Color.Unspecified
     ),
-    // Metadata Tags & Badges (e.g., "4/15 ENTREGAS", "MOTO")
     caption1 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
         fontSize = 10.sp,
         letterSpacing = 0.4.sp,
-        color = TextSecondary
+        color = Color.Unspecified
     ),
     caption2 = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,
         fontSize = 9.sp,
-        color = TextTertiary
+        color = Color.Unspecified
     )
 )

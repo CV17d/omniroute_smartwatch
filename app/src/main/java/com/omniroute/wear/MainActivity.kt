@@ -5,11 +5,15 @@ import android.view.HapticFeedbackConstants
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,9 +30,8 @@ import com.omniroute.wear.ui.screens.DeliveryConfirmationScreen
 import com.omniroute.wear.ui.screens.IncidentDialog
 import com.omniroute.wear.ui.screens.RouteFinishedScreen
 import com.omniroute.wear.ui.screens.RouteStartScreen
-import com.omniroute.wear.ui.theme.BackgroundPrimary
+import com.omniroute.wear.ui.theme.OmniTheme
 import com.omniroute.wear.ui.theme.OmniWearTheme
-import com.omniroute.wear.ui.theme.TextSecondary
 import com.omniroute.wear.viewmodels.DeliveryRouteViewModel
 import com.omniroute.wear.viewmodels.ScreenDestination
 
@@ -51,19 +54,20 @@ class MainActivity : ComponentActivity() {
             OmniWearTheme {
                 val uiState by viewModel.uiState.collectAsState()
                 val view = LocalView.current
+                val colors = OmniTheme.colors
 
                 Scaffold(
                     timeText = {
                         TimeText(
                             timeTextStyle = TimeTextDefaults.timeTextStyle(
-                                color = TextSecondary,
+                                color = colors.textSecondary,
                                 fontSize = 10.sp
                             )
                         )
                     },
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(BackgroundPrimary)
+                        .background(colors.background)
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
                         // Main Navigation Crossfade
@@ -92,6 +96,13 @@ class MainActivity : ComponentActivity() {
                                         turnDirection = stop?.turnDirection ?: "↓",
                                         distanceInstruction = "${stop?.distanceText ?: "150m"} - ${stop?.navigationInstruction ?: "Continuar abajo"}",
                                         vehicleType = uiState.route.vehicleType,
+                                        isSyncing = uiState.isLoading || uiState.pendingSyncCount > 0,
+                                        isOnline = uiState.isOnline,
+                                        pendingSyncCount = uiState.pendingSyncCount,
+                                        onRetrySync = {
+                                            view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                            viewModel.retrySync()
+                                        },
                                         onArrived = {
                                             view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
                                             viewModel.arriveAtStop()
@@ -134,8 +145,12 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        // Incident Modal Overlay
-                        if (uiState.isIncidentModalVisible) {
+                        // Transición fluida para el Modal de Incidencias
+                        AnimatedVisibility(
+                            visible = uiState.isIncidentModalVisible,
+                            enter = fadeIn() + slideInVertically(initialOffsetY = { it / 2 }),
+                            exit = fadeOut() + slideOutVertically(targetOffsetY = { it / 2 })
+                        ) {
                             IncidentDialog(
                                 onSelectIncident = { tag ->
                                     view.performHapticFeedback(HapticFeedbackConstants.REJECT)

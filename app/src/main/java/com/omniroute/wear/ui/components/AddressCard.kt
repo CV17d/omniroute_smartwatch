@@ -12,12 +12,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Text
-import com.omniroute.wear.ui.theme.TextPrimary
-import com.omniroute.wear.ui.theme.TextSecondary
+import com.omniroute.wear.ui.theme.OmniTheme
 
 /**
- * High-contrast address display tailored for circular Wear OS screens.
- * Text is horizontally constrained to avoid edge clipping along bezel arcs.
+ * Tarjeta de dirección adaptable a Modo Claro/Oscuro.
  */
 @Composable
 fun AddressCard(
@@ -26,15 +24,17 @@ fun AddressCard(
     modifier: Modifier = Modifier,
     isEmphasized: Boolean = true
 ) {
+    val colors = OmniTheme.colors
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp), // Safe circular margin
+            .padding(horizontal = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
             text = address,
-            color = TextPrimary,
+            color = colors.textPrimary,
             fontSize = if (isEmphasized) 17.sp else 14.sp,
             fontWeight = FontWeight.Black,
             textAlign = TextAlign.Center,
@@ -45,7 +45,7 @@ fun AddressCard(
         if (recipient.isNotBlank()) {
             Text(
                 text = recipient,
-                color = TextSecondary,
+                color = colors.textSecondary,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center,
