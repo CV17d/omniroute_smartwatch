@@ -4,6 +4,29 @@ Clientes nativos para Smartwatches de **OmniRoute** diseñados como asistente lo
 
 ---
 
+## 0. Descarga y Requisitos
+
+**Descarga el APK para Wear OS** desde la sección [Releases](https://github.com/CV17d/omniroute_smartwatch/releases/latest) (`omniroute-wear.apk`) e instálalo en el reloj con `adb install omniroute-wear.apk`.
+
+### Backend requerido
+Para que la app funcione es necesario desplegar el backend:
+- **Backend:** https://github.com/simviz12/viberoute-backend.git
+
+### Frontend web (opcional)
+Si quieres una pantalla más visual para gestionar rutas y entregas:
+- **Frontend:** https://github.com/simviz12/viberoute-frontend.git
+
+### Usuarios de prueba
+
+| Rol | Usuario | Contraseña |
+| :--- | :--- | :--- |
+| ADMIN | `cj29772@gmail.com` | `Hola1234567` |
+| LOGISTICS | `logistics2@viberoute.com` | `VibeRoute2026!` |
+| DRIVER | `driver2@viberoute.com` | `VibeRoute2026!` |
+
+
+---
+
 ## 1. Diseño Glanceable (Modo Claro de Alto Contraste)
 
 La interfaz de usuario está optimizada para legibilidad instantánea bajo luz solar directa en exteriores:
